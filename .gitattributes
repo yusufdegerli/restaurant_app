@@ -1,0 +1,10 @@
+# Tüm metin dosyaları için LF kullan
+* text=auto eol=lf
+
+# Windows için CRLF istenen dosyalar
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+
+# İkili dosyalar için satır sonu dönüşümünü devre dışı bırak
+*.png binary
+*.jpg binary
