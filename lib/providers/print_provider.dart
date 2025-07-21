@@ -1,35 +1,27 @@
 class PrintJobManager {
-  Map<int, int> _printCounts = {};
+  final Map<int, int> _printCounts = {};
 
-  int getPrintCount(int printerId) {
-    return _printCounts[printerId] ?? 0;
-  }
+  int getPrintCount(int printerId) => _printCounts[printerId] ?? 0;
 
   void addPrintJob(int printerId) {
-    if (_printCounts.containsKey(printerId)) {
-      _printCounts[printerId] = 0;
-    }
-    _printCounts[printerId] = _printCounts[printerId]! + 1;
+    _printCounts[printerId] = getPrintCount(printerId) + 1;
   }
 
-  bool didPrintJobExecuted(int printerId) {
-    return getPrintCount(printerId) > 0;
-  }
+  bool didPrintJobExecuted(int printerId) => getPrintCount(printerId) > 0;
 
   Map<int, int> createPrintCounts(String printJobData) {
-    Map<int, int> printCounts = {};
+    final printCounts = <int, int>{};
     try {
-      List<String> entries = printJobData.split('#');
-      for (String entry in entries) {
+      for (final entry in printJobData.split('#')) {
         if (entry.isNotEmpty) {
-          List<String> parts = entry.split(':');
-          int printerId = int.parse(parts[0]);
-          int count = int.parse(parts[1]);
+          final parts = entry.split(':');
+          final printerId = int.parse(parts[0]);
+          final count = int.parse(parts[1]);
           printCounts[printerId] = count;
         }
       }
     } catch (e) {
-      print("Error parsing PrintJobData $e");
+      print('Error parsing PrintJobData $e');
     }
     return printCounts;
   }

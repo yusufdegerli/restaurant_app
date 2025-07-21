@@ -3,7 +3,7 @@ import 'package:sambapos_app_restorant/models/menu_item_property_groups.dart';
 class MenuItemProperty {
   final int id;
   final String name;
-  final int? menuItemPropertyGroupId; // Grup ID'si (null olabilir)
+  final int? menuItemPropertyGroupId;
   final MenuItemPropertyGroup? menuItemPropertyGroup;
   final int? menuItemId;
 
@@ -20,12 +20,9 @@ class MenuItemProperty {
       id: json['id'] as int,
       name: json['name'] as String,
       menuItemPropertyGroupId: json['menuItemPropertyGroup_Id'] as int?,
-      menuItemPropertyGroup:
-          json['menuItemPropertyGroup'] != null
-              ? MenuItemPropertyGroup.fromJson(
-                json['menuItemPropertyGroup'] as Map<String, dynamic>,
-              )
-              : null, // Null kontrolü
+      menuItemPropertyGroup: json['menuItemPropertyGroup'] != null
+          ? MenuItemPropertyGroup.fromJson(json['menuItemPropertyGroup'] as Map<String, dynamic>)
+          : null,
     );
   }
 }

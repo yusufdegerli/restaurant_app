@@ -1,8 +1,8 @@
 class MenuItemPropertyGroup {
   final int id;
   final String name;
-  final bool singleSelection; // API'den gelmeli
-  final bool multipleSelection; // API'den gelmeli
+  final bool singleSelection;
+  final bool multipleSelection;
 
   MenuItemPropertyGroup({
     required this.id,
@@ -15,9 +15,7 @@ class MenuItemPropertyGroup {
     return MenuItemPropertyGroup(
       id: json['id'] as int,
       name: json['name'] as String,
-      singleSelection:
-          json['singleSelection'] ??
-          false, // API'de bu alan yoksa varsayılan false
+      singleSelection: json['singleSelection'] ?? false,
       multipleSelection: json['multipleSelection'] ?? false,
     );
   }

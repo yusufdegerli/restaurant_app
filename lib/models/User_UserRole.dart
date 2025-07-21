@@ -13,18 +13,15 @@ class User {
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      id: json['id'] ?? 0, // null ise 0
+      id: json['id'] ?? 0,
       name: json['name']?.toString() ?? 'Unknown',
       pinCode: json['pinCode']?.toString() ?? '',
-      userRoleId:
-          json['userRole_Id'] ?? json['userRole']?['id'] ?? 0, // null ise 0
+      userRoleId: json['userRole_Id'] ?? json['userRole']?['id'] ?? 0,
     );
   }
 
   @override
-  String toString() {
-    return 'User(id: $id, name: $name, pinCode: $pinCode, userRoleId: $userRoleId)';
-  }
+  String toString() => 'User(id: $id, name: $name, pinCode: $pinCode, userRoleId: $userRoleId)';
 }
 
 class UserRole {
@@ -32,18 +29,20 @@ class UserRole {
   final String name;
   final bool isAdmin;
 
-  UserRole({required this.id, required this.name, required this.isAdmin});
+  UserRole({
+    required this.id,
+    required this.name,
+    required this.isAdmin,
+  });
 
   factory UserRole.fromJson(Map<String, dynamic> json) {
     return UserRole(
-      id: json['id'] ?? 0, // null ise 0
+      id: json['id'] ?? 0,
       name: json['name']?.toString() ?? 'Unknown',
-      isAdmin: json['isAdmin'] ?? false, // null ise false
+      isAdmin: json['isAdmin'] ?? false,
     );
   }
 
   @override
-  String toString() {
-    return 'UserRole(id: $id, name: $name, isAdmin: $isAdmin)';
-  }
+  String toString() => 'UserRole(id: $id, name: $name, isAdmin: $isAdmin)';
 }

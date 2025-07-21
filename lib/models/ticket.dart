@@ -29,26 +29,23 @@ class TicketItemDto {
       price: (json['price'] as num?)?.toDouble() ?? 0.0,
       quantity: (json['quantity'] as num?)?.toDouble() ?? 0.0,
       portionName: json['portionName'] ?? 'Normal',
-      createdDateTime:
-          json['createdDateTime'] != null
-              ? DateTime.parse(json['createdDateTime'])
-              : null,
+      createdDateTime: json['createdDateTime'] != null ? DateTime.parse(json['createdDateTime']) : null,
       creatingUserId: json['creatingUserId'] ?? 0,
       departmentId: json['departmentId'],
     );
   }
 
   Map<String, dynamic> toJson() => {
-    'ticketId': ticketId,
-    'menuItemId': menuItemId,
-    'menuItemName': menuItemName,
-    'price': price,
-    'quantity': quantity,
-    'portionName': portionName,
-    'createdDateTime': createdDateTime?.toIso8601String(),
-    'creatingUserId': creatingUserId,
-    'departmentId': departmentId,
-  };
+        'ticketId': ticketId,
+        'menuItemId': menuItemId,
+        'menuItemName': menuItemName,
+        'price': price,
+        'quantity': quantity,
+        'portionName': portionName,
+        'createdDateTime': createdDateTime?.toIso8601String(),
+        'creatingUserId': creatingUserId,
+        'departmentId': departmentId,
+      };
 }
 
 class Ticket {

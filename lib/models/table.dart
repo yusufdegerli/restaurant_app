@@ -1,6 +1,6 @@
 import 'package:hive/hive.dart';
 
-part 'table.g.dart'; // Bu dosya build_runner tarafından oluşturulacak
+part 'table.g.dart';
 
 @HiveType(typeId: 2)
 class RestaurantTable {
@@ -33,10 +33,7 @@ class RestaurantTable {
       name: json['name'] ?? 'No Name',
       order: json['order'] ?? 0,
       category: json['category'] ?? 'General',
-      ticketId:
-          json['ticketId'] != null && json['ticketId'] is int
-              ? json['ticketId']
-              : 0,
+      ticketId: (json['ticketId'] is int) ? json['ticketId'] : 0,
     );
   }
 }
