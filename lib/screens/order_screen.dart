@@ -6,7 +6,6 @@ import 'package:sambapos_app_restorant/services/api_service.dart';
 import '../models/menu_item.dart';
 import 'payment_screen.dart';
 import 'dart:async';
-import 'package:shimmer/shimmer.dart';
 import 'package:sambapos_app_restorant/animations/animated_overlay.dart';
 import 'package:sambapos_app_restorant/widgets/order_category_tabbar.dart';
 import 'package:sambapos_app_restorant/widgets/order_menu_grid.dart';
@@ -157,20 +156,18 @@ class OrderScreenState extends State<OrderScreen> with SingleTickerProviderState
       bool singleSelection = false;
       bool multipleSelection = false;
 
-      if (matchingGroup != null) {
-        // 2. Grup id'si ile eşleşen property'leri bul
-        variants =
-            properties
-                .where(
-                  (prop) => prop.menuItemPropertyGroupId == matchingGroup.id,
-                )
-                .map((e) => e.name)
-                .toList();
+      // 2. Grup id'si ile eşleşen property'leri bul
+      variants =
+          properties
+              .where(
+                (prop) => prop.menuItemPropertyGroupId == matchingGroup.id,
+              )
+              .map((e) => e.name)
+              .toList();
 
-        hasVariants = variants.isNotEmpty;
-        singleSelection = matchingGroup.singleSelection;
-        multipleSelection = matchingGroup.multipleSelection;
-      }
+      hasVariants = variants.isNotEmpty;
+      singleSelection = matchingGroup.singleSelection;
+      multipleSelection = matchingGroup.multipleSelection;
 
       return MenuItem(
         id: item.id,
@@ -299,203 +296,213 @@ class OrderScreenState extends State<OrderScreen> with SingleTickerProviderState
   @override
   Widget build(BuildContext context) {
     try {
-      return WillPopScope(
-        onWillPop: _onWillPop,
+      return PopScope(
+        canPop: true,
+        onPopInvokedWithResult: (didPop, result) async {
+          if (!didPop) {
+            await _onWillPop();
+          }
+        },
         child: _hideContent
             ? Container(
                 color: Theme.of(context).scaffoldBackgroundColor,
               )
             : Scaffold(
-          // AppBar kaldırıldı, body değiştirildi
-          backgroundColor: Theme.of(context).brightness == Brightness.dark
-              ? Color(0xFF566571) // Dark mode arka plan
-              : Color(0xFFF8E4BF), // Light mode arka plan
-          body: _isLoading
-              ? SizedBox.shrink()
-              : Column(
-                  children: [
-                    if (categories.isNotEmpty && _tabController != null && _searchText.isEmpty)
-                      OrderCategoryTabBar(categories: categories, tabController: _tabController!),
-                    // Arama Barı
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                      child: TextField(
-                        decoration: InputDecoration(
-                          hintText: 'Ürün ara...',
-                          prefixIcon: Icon(Icons.search),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                          contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 12),
-                        ),
-                        onChanged: (val) {
-                          setState(() {
-                            _searchText = val;
-                          });
-                        },
-                      ),
-                    ),
-                    // Adet Seçimi
-                    SizedBox(
-                      height: 60,
-                      child: ListView(
-                        scrollDirection: Axis.horizontal,
+                appBar: AppBar(
+                  title: Text('${widget.tableName} - Sipariş'),
+                  backgroundColor: Theme.of(context).appBarTheme.backgroundColor ?? (Theme.of(context).brightness == Brightness.dark ? const Color(0xFF23242B) : Colors.blue[800]),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                ),
+                body: _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : Column(
                         children: [
-                          const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 12),
-                            child: Center(
-                              child: Text(
-                                "Adet: ",
-                                style: TextStyle(fontSize: 18),
+                          if (categories.isNotEmpty && _tabController != null && _searchText.isEmpty)
+                            OrderCategoryTabBar(categories: categories, tabController: _tabController!),
+                          // Arama Barı
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                            child: TextField(
+                              decoration: InputDecoration(
+                                hintText: 'Ürün ara...',
+                                prefixIcon: Icon(Icons.search),
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                                contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 12),
                               ),
+                              onChanged: (val) {
+                                setState(() {
+                                  _searchText = val;
+                                });
+                              },
                             ),
                           ),
-                          ElevatedButton(
-                            onPressed: _decrementQuantity,
-                            child: const Text("-"),
-                          ),
-                          ...List.generate(10, (index) => index + 1).map(
-                                (number) => ElevatedButton(
-                              onPressed: () => _updateQuantity(number),
-                              child: Text("$number"),
+                          // Adet Seçimi
+                          SizedBox(
+                            height: 60,
+                            child: ListView(
+                              scrollDirection: Axis.horizontal,
+                              children: [
+                                const Padding(
+                                  padding: EdgeInsets.symmetric(horizontal: 12),
+                                  child: Center(
+                                    child: Text(
+                                      "Adet: ",
+                                      style: TextStyle(fontSize: 18),
+                                    ),
+                                  ),
+                                ),
+                                ElevatedButton(
+                                  onPressed: _decrementQuantity,
+                                  child: const Text("-"),
+                                ),
+                                ...List.generate(10, (index) => index + 1).map(
+                                      (number) => ElevatedButton(
+                                    onPressed: () => _updateQuantity(number),
+                                    child: Text("$number"),
+                                  ),
+                                ),
+                                ElevatedButton(
+                                  onPressed: _incrementQuantity,
+                                  child: const Text("+"),
+                                ),
+                              ],
                             ),
                           ),
-                          ElevatedButton(
-                            onPressed: _incrementQuantity,
-                            child: const Text("+"),
-                          ),
-                        ],
-                      ),
-                    ),
-                    // Menü Gridview
-                    Expanded(
-                      child: OrderMenuGrid(
-                        items: filteredItems,
-                        onItemTap: (item) {
-                          if (item.hasVariants && item.variants.isNotEmpty) {
-                            _showVariantsModal(item);
-                          } else {
-                            _addToOrder(item);
-                          }
-                        },
-                      ),
-                    ),
-                    // Sipariş Listesi ve Ödeme Butonu
-                    SizedBox(
-                      height: 350,
-                      child: Column(
-                        children: [
-                          const Padding(
-                            padding: EdgeInsets.all(8.0),
-                            child: Text(
-                              "Siparişler",
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
+                          // Menü Gridview
                           Expanded(
-                            child: AnimatedSwitcher(
-                              duration: const Duration(milliseconds: 400),
-                              child: Provider.of<OrderProvider>(
-                                context,
-                                listen: true,
-                              ).selectedItems.isEmpty
-                                  ? const Center(
-                                      child: Text("Henüz sipariş eklenmedi"),
-                                    )
-                                  : OrderListView(
-                                      groupedItems: Provider.of<OrderProvider>(
-                                        context,
-                                        listen: true,
-                                      ).selectedItems.fold<Map<MenuItem, int>>(
-                                        {},
-                                        (map, item) {
-                                          map[item] = (map[item] ?? 0) + 1;
-                                          return map;
-                                        },
+                            child: OrderMenuGrid(
+                              items: filteredItems,
+                              onItemTap: (item) {
+                                if (item.hasVariants && item.variants.isNotEmpty) {
+                                  _showVariantsModal(item);
+                                } else {
+                                  _addToOrder(item);
+                                }
+                              },
+                            ),
+                          ),
+                          // Sipariş Listesi ve Ödeme Butonu
+                          SizedBox(
+                            height: 350,
+                            child: Column(
+                              children: [
+                                const Padding(
+                                  padding: EdgeInsets.all(8.0),
+                                  child: Text(
+                                    "Siparişler",
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: AnimatedSwitcher(
+                                    duration: const Duration(milliseconds: 400),
+                                    child: Provider.of<OrderProvider>(
+                                      context,
+                                      listen: true,
+                                    ).selectedItems.isEmpty
+                                        ? const Center(
+                                            child: Text("Henüz sipariş eklenmedi"),
+                                          )
+                                        : OrderListView(
+                                            groupedItems: Provider.of<OrderProvider>(
+                                              context,
+                                              listen: true,
+                                            ).selectedItems.fold<Map<MenuItem, int>>(
+                                              {},
+                                              (map, item) {
+                                                map[item] = (map[item] ?? 0) + 1;
+                                                return map;
+                                              },
+                                            ),
+                                            onDelete: (item) {
+                                              final orderProvider = Provider.of<OrderProvider>(
+                                                context,
+                                                listen: false,
+                                              );
+                                              orderProvider.selectedItems.removeWhere(
+                                                (i) => i.id == item.id,
+                                              );
+                                              // orderProvider.notifyListeners(); // Bunu kaldırıyoruz
+                                              // Bunun yerine OrderProvider'a bir metot eklenmeli
+                                              // Örneğin: orderProvider.removeItemAndUpdate(item);
+                                              // Şimdilik sadece setState ile güncelliyoruz
+                                              setState(() {});
+                                            },
+                                          ),
+                                  ),
+                                ),
+                                if (Provider.of<OrderProvider>(
+                                  context,
+                                  listen: true,
+                                ).selectedItems.isNotEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Theme.of(context).brightness == Brightness.dark
+                                            ? Colors.amber[0x3238A5FF]
+                                            : Theme.of(context).colorScheme.primary,
+                                        foregroundColor: Theme.of(context).brightness == Brightness.dark
+                                            ? Colors.black
+                                            : Colors.white,
+                                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                                        textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                                       ),
-                                      onDelete: (item) {
-                                        final orderProvider = Provider.of<OrderProvider>(
+                                      onPressed: () {
+                                        final orderProvider =
+                                            Provider.of<OrderProvider>(
                                           context,
                                           listen: false,
                                         );
-                                        orderProvider.selectedItems.removeWhere(
-                                          (i) => i.id == item.id,
+                                        if (orderProvider.selectedItems.isEmpty) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                "Lütfen en az bir ürün seçin.",
+                                              ),
+                                            ),
+                                          );
+                                          return;
+                                        }
+
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder:
+                                                (context) => PaymentScreen(
+                                              tableName:
+                                                  widget
+                                                      .tableName, // ⇐ o masanın adı string
+                                              totalAmount: _totalPrice,
+                                              selectedItems:
+                                                  orderProvider.selectedItems,
+                                              ticketId: widget.ticketId,
+                                            ),
+                                          ),
                                         );
-                                        orderProvider.notifyListeners();
                                       },
+                                      child: Text(
+                                        "SİPARİŞ AL (₺${_totalPrice.toStringAsFixed(2)})",
+                                      ),
                                     ),
+                                  ),
+                              ],
                             ),
                           ),
-                          if (Provider.of<OrderProvider>(
-                            context,
-                            listen: true,
-                          ).selectedItems.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Theme.of(context).brightness == Brightness.dark
-                                      ? Colors.amber[0x3238A5FF]
-                                      : Theme.of(context).colorScheme.primary,
-                                  foregroundColor: Theme.of(context).brightness == Brightness.dark
-                                      ? Colors.black
-                                      : Colors.white,
-                                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                                  textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                                ),
-                                onPressed: () {
-                                  final orderProvider =
-                                      Provider.of<OrderProvider>(
-                                    context,
-                                    listen: false,
-                                  );
-                                  if (orderProvider.selectedItems.isEmpty) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text(
-                                          "Lütfen en az bir ürün seçin.",
-                                        ),
-                                      ),
-                                    );
-                                    return;
-                                  }
-
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder:
-                                          (context) => PaymentScreen(
-                                        tableName:
-                                            widget
-                                                .tableName, // ⇐ o masanın adı string
-                                        totalAmount: _totalPrice,
-                                        selectedItems:
-                                            orderProvider.selectedItems,
-                                        ticketId: widget.ticketId,
-                                      ),
-                                    ),
-                                  );
-                                },
-                                child: Text(
-                                  "SİPARİŞ AL (₺${_totalPrice.toStringAsFixed(2)})",
-                                ),
-                              ),
-                            ),
                         ],
                       ),
-                    ),
-                  ],
-                ),
-      ));
+              ),
+      );
     } catch (e, stackTrace) {
       print("Error in build: $e");
       print(stackTrace);
       return Scaffold(
         appBar: AppBar(title: Text("${widget.tableName} - Sipariş")),
-        backgroundColor: Theme.of(context).brightness == Brightness.dark
-            ? Color(0xFF566571) // Dark mode arka plan
-            : Color(0xFFF8E4BF), // Light mode arka plan
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         body: const Center(
           child: Text(
             "Bir hata oluştu, lütfen tekrar deneyin.",
@@ -504,56 +511,5 @@ class OrderScreenState extends State<OrderScreen> with SingleTickerProviderState
         ),
       );
     }
-  }
-
-  Widget _buildOrderList() {
-    final orderProvider = Provider.of<OrderProvider>(context, listen: true);
-
-    // Gruplama işlemi
-    final groupedItems = orderProvider.selectedItems.fold<Map<MenuItem, int>>(
-      {},
-      (map, item) {
-        map[item] = (map[item] ?? 0) + 1;
-        return map;
-      },
-    );
-
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const ClampingScrollPhysics(),
-      itemCount: groupedItems.length,
-      itemBuilder: (context, index) {
-        final entry = groupedItems.entries.elementAt(index);
-        return ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
-          dense: true,
-          visualDensity: VisualDensity.compact,
-          minVerticalPadding: 0,
-          title: Text(
-            "${entry.key.name} x${entry.value}",
-            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
-          ),
-          subtitle: Text(
-            "₺${(entry.key.price * entry.value).toStringAsFixed(2)}",
-            style: const TextStyle(fontSize: 12),
-          ),
-          trailing: IconButton(
-            icon: const Icon(Icons.delete, color: Colors.red, size: 16),
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
-            onPressed: () {
-              final orderProvider = Provider.of<OrderProvider>(
-                context,
-                listen: false,
-              );
-              orderProvider.selectedItems.removeWhere(
-                (i) => i.id == entry.key.id,
-              );
-              orderProvider.notifyListeners();
-            },
-          ),
-        );
-      },
-    );
   }
 }

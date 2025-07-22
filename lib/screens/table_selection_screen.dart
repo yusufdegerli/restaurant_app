@@ -11,18 +11,15 @@ import 'package:sambapos_app_restorant/services/websocket_service.dart';
 import 'dart:convert';
 import 'dart:async';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:sambapos_app_restorant/services/cache_service.dart';
 import 'package:sambapos_app_restorant/screens/login_screen.dart';
 import 'package:sambapos_app_restorant/screens/close_table_screen.dart';
 import '../main.dart';
-import 'package:lottie/lottie.dart';
 import 'package:sambapos_app_restorant/animations/animated_overlay.dart';
-import 'package:sambapos_app_restorant/widgets/animated_table_button.dart';
 import 'package:sambapos_app_restorant/widgets/animated_sheet_content.dart';
 import 'package:sambapos_app_restorant/widgets/table_category_section.dart';
 import 'package:sambapos_app_restorant/widgets/table_selection_appbar.dart';
 import 'package:sambapos_app_restorant/utils/table_selection_helpers.dart';
-// FlyingText importu kaldırıldı
+import 'package:flutter/services.dart';
 
 
 class TableSelectionScreen extends StatefulWidget {
@@ -49,15 +46,68 @@ class _TableSelectionScreenState extends State<TableSelectionScreen>
   bool _useLocalCache = true;
   late AnimationController _lottieController;
 
+  //gradient animasyonu için
+  late AnimationController _gradientController;
+  late Animation<Alignment> _beginAnimation;
+  late Animation<Alignment> _endAnimation;
+
   OverlayEntry? _overlayEntry;
   final Map<String, GlobalKey> _tableKeys = {};
+
+  // Renk test için eklenen state
+  /*Map<String, String> _lightColors = {
+    'primary': '799EFF',
+    'secondary': 'FFDE63',
+    'background': 'FEFFC4',
+    'surface': 'FFDE63',
+    'appBar': 'FFBC4C',
+    'onPrimary': '090040',
+    'onSurface': '090040',
+  };
+  Map<String, String> _darkColors = {
+    'primary': '000B58',
+    'secondary': '003161',
+    'background': '006A67',
+    'surface': '003161',
+    'appBar': '003161',
+    'onPrimary': 'FFF4B7',
+    'onSurface': 'FFF4B7',
+  };
+  bool _showColorTest = false;*/
+
+  // Aktif renkleri döndüren yardımcı fonksiyonlar
+  /*Color _getColor(String key) {
+    final brightness = Theme.of(context).brightness;
+    final hex = brightness == Brightness.dark ? _darkColors[key]! : _lightColors[key]!;
+    return Color(int.parse('0xFF$hex'));
+  }
+  Color get _backgroundColor => _getColor('background');
+  Color get _appBarColor => _getColor('appBar');
+  Color get _primaryColor => _getColor('primary');
+  Color get _surfaceColor => _getColor('surface');
+  Color get _onPrimaryColor => _getColor('onPrimary');
+  Color get _onSurfaceColor => _getColor('onSurface');*/
 
   @override
   void initState() {
     super.initState();
-    print("TableSelectionScreen initState started");
     _lottieController = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 1000));
+    //Gradient animasyonu
+    _gradientController  = AnimationController(
+        vsync: this,
+      duration: const Duration(seconds: 5),
+    )..repeat(reverse: true);
+    _beginAnimation = Tween<Alignment>(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+    ).animate(_gradientController);
+
+    _endAnimation = Tween<Alignment>(
+      begin: Alignment.bottomRight,
+      end: Alignment.topLeft,
+    ).animate(_gradientController);
+    //Gradient animasyon yukarısı
     _initHive().then((_) {
       print("Hive initialized, fetching tables");
       _fetchTables();
@@ -170,6 +220,7 @@ class _TableSelectionScreenState extends State<TableSelectionScreen>
     if (Hive.isBoxOpen('Tables')) {
       _tablesBox.close();
     }
+    _gradientController.dispose();
     _lottieController.dispose();
     super.dispose();
   }
@@ -836,89 +887,141 @@ class _TableSelectionScreenState extends State<TableSelectionScreen>
     );
   }
 
+  // Renk paleti testiyle ilgili tüm kodlar kaldırıldı
+
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final isAuthorized = authProvider.userRoleId == 1 || authProvider.userRoleId == 2;
     print("isAuthorized: $isAuthorized");
 
+    // Gradient renkleri tema moduna göre
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final gradientColors = isDarkMode
+        ? [Color(0xFF000000), Color(0xFF000B58)]
+        : [Color(0xFFFEFFC4), Color(0xFFF5D667)];
+
     if (_isLoading) {
       return Scaffold(
-        body: CustomScrollView(
-          slivers: [
-            SliverAppBar(
-              pinned: true,
-              floating: false,
-              snap: false,
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              title: const Text("Masa Seçimi",
-                style: TextStyle(color: Colors.black),
+        body: AnimatedBuilder(
+          animation: _gradientController,
+          builder: (context, _) {
+            return DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: gradientColors,
+                  begin: _beginAnimation.value,
+                  end: _endAnimation.value,
+                ),
               ),
-            ),
-            const SliverFillRemaining(
-              hasScrollBody: false,
-              child: Center(child: CircularProgressIndicator()),
-            ),
-          ],
+              child: CustomScrollView(
+                slivers: [
+                  SliverAppBar(
+                    pinned: true,
+                    floating: false,
+                    snap: false,
+                    backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+                    elevation: 0,
+                    title: Text(
+                      "Masa Seçimi",
+                      style: TextStyle(color: Theme.of(context).appBarTheme.foregroundColor),
+                    ),
+                  ),
+                  const SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                ],
+              ),
+            );
+          },
         ),
       );
     }
     if (_error.isNotEmpty) {
       return Scaffold(
-        body: CustomScrollView(
-          slivers: [
-            SliverAppBar(
-              pinned: true,
-              floating: false,
-              snap: false,
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              title: const Text("Masa Seçimi",
-                style: TextStyle(color: Colors.black),
-              ),
-            ),
-            SliverFillRemaining(
-              hasScrollBody: false,
-              child: Center(
-                child: Text(
-                  _error,
-                  style: const TextStyle(fontSize: 18, color: Colors.red),
+        body: AnimatedBuilder(
+          animation: _gradientController,
+          builder: (context, _) {
+            return DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: gradientColors,
+                  begin: _beginAnimation.value,
+                  end: _endAnimation.value,
                 ),
               ),
-            ),
-          ],
+              child: CustomScrollView(
+                slivers: [
+                  SliverAppBar(
+                    pinned: true,
+                    floating: false,
+                    snap: false,
+                    backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+                    elevation: 0,
+                    title: Text(
+                      "Masa Seçimi",
+                      style: TextStyle(color: Theme.of(context).appBarTheme.foregroundColor),
+                    ),
+                  ),
+                  SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: Center(
+                      child: Text(
+                        _error,
+                        style: TextStyle(fontSize: 18, color: Colors.red),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
         ),
       );
     }
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          Consumer<ThemeProvider>(
-            builder: (context, themeProvider, _) {
-              return TableSelectionAppBar(
-                userName: _userName,
-                userRoleId: authProvider.userRoleId,
-                lottieController: _lottieController,
-                onLogout: _handleLogout,
-                onCloseTable: _handleCloseTable,
-                isAuthorized: isAuthorized,
-                themeMode: themeProvider.themeMode,
-                onToggleTheme: themeProvider.toggleTheme,
-              );
-            },
-          ),
-          SliverToBoxAdapter(
-            child: GestureDetector(
-              onTap: _closeActionMenu,
-              behavior: HitTestBehavior.opaque,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: _buildCategorySections(),
+      body: AnimatedBuilder(
+        animation: _gradientController,
+        builder: (context, _) {
+          return DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: gradientColors,
+                begin: _beginAnimation.value,
+                end: _endAnimation.value,
               ),
             ),
-          ),
-        ],
+            child: CustomScrollView(
+              slivers: [
+                Consumer<ThemeProvider>(
+                  builder: (context, themeProvider, _) {
+                    return TableSelectionAppBar(
+                      userName: _userName,
+                      userRoleId: authProvider.userRoleId,
+                      lottieController: _lottieController,
+                      onLogout: _handleLogout,
+                      onCloseTable: _handleCloseTable,
+                      isAuthorized: isAuthorized,
+                      themeMode: themeProvider.themeMode,
+                      onToggleTheme: themeProvider.toggleTheme,
+                    );
+                  },
+                ),
+                SliverToBoxAdapter(
+                  child: GestureDetector(
+                    onTap: _closeActionMenu,
+                    behavior: HitTestBehavior.opaque,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: _buildCategorySections(),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

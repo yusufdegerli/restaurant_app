@@ -94,13 +94,20 @@ class TableGridButton extends StatelessWidget {
         if (orderProvider == null) {
           return const Text("OrderProvider bulunamadı.");
         }
+        final theme = Theme.of(context);
         final hasOrder = orderProvider.hasOrder(table.name);
-        final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+        final isDarkMode = theme.brightness == Brightness.dark;
+        final colorScheme = theme.colorScheme;
         final buttonColor = isMovingTable && table.name == sourceTable
             ? Colors.purple
             : (table.ticketId != 0 || hasOrder)
-                ? (isDarkMode ? Color(0xFF1B3562) : Color(0xFFE67C25))
-                : (isDarkMode ? Color(0xFF566571) : Color(0xFFF8E4BF));
+                ? colorScheme.primary
+                : colorScheme.surface;
+        final textColor = isMovingTable && table.name == sourceTable
+            ? Colors.white
+            : (table.ticketId != 0 || hasOrder)
+                ? colorScheme.onPrimary
+                : colorScheme.onSurface;
 
         return AnimatedTableButton(
           buttonKey: tableKey,
@@ -118,11 +125,7 @@ class TableGridButton extends StatelessWidget {
             child: Text(
               table.name,
               style: TextStyle(
-                color: isMovingTable && table.name == sourceTable
-                    ? Colors.white
-                    : (table.ticketId != 0 || hasOrder)
-                        ? (isDarkMode ? Color(0xFFF2F2F2) : Color(0xFFFFFFFF))
-                        : (isDarkMode ? Color(0xFFF2F2F2) : Color(0xFF555F70)),
+                color: textColor,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),

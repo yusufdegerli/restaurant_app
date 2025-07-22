@@ -62,6 +62,7 @@ class _AnimatedTableButtonState extends State<AnimatedTableButton> with SingleTi
             decoration: widget.isOccupied
                 ? BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
+                    color: widget.buttonColor, // Arka plan rengi eklendi
                     boxShadow: [
                       BoxShadow(
                         color: _getGlowColor(context),
@@ -70,7 +71,10 @@ class _AnimatedTableButtonState extends State<AnimatedTableButton> with SingleTi
                       ),
                     ],
                   )
-                : null,
+                : BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    color: widget.buttonColor, // Arka plan rengi eklendi
+                  ),
             child: Material(
               color: Colors.transparent,
               child: InkWell(
