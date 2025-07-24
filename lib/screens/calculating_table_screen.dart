@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:sambapos_app_restorant/models/menu_item.dart';
 import 'package:sambapos_app_restorant/models/ticket.dart';
 import 'package:sambapos_app_restorant/services/api_service.dart';
+import 'package:sambapos_app_restorant/widgets/animate_gradient_background.dart'; // Yeni widget'ı ekle
 
 class CalculatingScreen extends StatefulWidget {
   final String tableName;
@@ -435,43 +436,45 @@ class _CalculatingScreenState extends State<CalculatingScreen> with SingleTicker
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      appBar: AppBar(
-        title: Text('${widget.tableName} - Hesap'),
-        backgroundColor: isDark ? const Color(0xFF23242B) : Colors.blue[800],
-        foregroundColor: Colors.white,
-        elevation: 0,
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [Tab(text: 'Sipariş Detayları'), Tab(text: 'Ödeme İşlemleri')],
-          indicatorColor: theme.colorScheme.primary,
-          labelColor: theme.colorScheme.primary,
-          unselectedLabelColor: isDark ? Colors.white70 : Colors.black54,
+    return AnimatedGradientBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent, // Gradient görünecek
+        appBar: AppBar(
+          title: Text('${widget.tableName} - Hesap'),
+          backgroundColor: isDark ? const Color(0xFF23242B) : Colors.blue[800],
+          foregroundColor: Colors.white,
+          elevation: 0,
+          bottom: TabBar(
+            controller: _tabController,
+            tabs: const [Tab(text: 'Sipariş Detayları'), Tab(text: 'Ödeme İşlemleri')],
+            indicatorColor: theme.colorScheme.primary,
+            labelColor: theme.colorScheme.primary,
+            unselectedLabelColor: isDark ? Colors.white70 : Colors.black54,
+          ),
+          actions: [
+            IconButton(icon: const Icon(Icons.history), onPressed: () => _showPaidOrdersDialog()),
+            IconButton(icon: const Icon(Icons.print), onPressed: () => _printReceipt()),
+          ],
         ),
-        actions: [
-          IconButton(icon: const Icon(Icons.history), onPressed: () => _showPaidOrdersDialog()),
-          IconButton(icon: const Icon(Icons.print), onPressed: () => _printReceipt()),
-        ],
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-          ? Center(
-        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Icon(Icons.error, size: 64, color: Colors.red),
-          const SizedBox(height: 16),
-          Text(_error!, style: const TextStyle(fontSize: 16, color: Colors.red)),
-          const SizedBox(height: 16),
-          ElevatedButton(onPressed: () => _fetchTicketItems(), child: const Text('Tekrar Dene')),
-        ]),
-      )
-          : TabBarView(
-        controller: _tabController,
-        children: [
-          _buildOrderList(context, isDark),
-          SingleChildScrollView(child: _buildPaymentPanel(context, isDark)),
-        ],
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _error != null
+            ? Center(
+          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+            Icon(Icons.error, size: 64, color: Colors.red),
+            const SizedBox(height: 16),
+            Text(_error!, style: const TextStyle(fontSize: 16, color: Colors.red)),
+            const SizedBox(height: 16),
+            ElevatedButton(onPressed: () => _fetchTicketItems(), child: const Text('Tekrar Dene')),
+          ]),
+        )
+            : TabBarView(
+          controller: _tabController,
+          children: [
+            _buildOrderList(context, isDark),
+            SingleChildScrollView(child: _buildPaymentPanel(context, isDark)),
+          ],
+        ),
       ),
     );
   }

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:sambapos_app_restorant/services/api_service.dart';
 import 'package:sambapos_app_restorant/screens/table_selection_screen.dart';
 import 'package:sambapos_app_restorant/providers/auth_provider.dart';
+import 'package:sambapos_app_restorant/widgets/animate_gradient_background.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -36,7 +37,7 @@ class _LoginScreenState extends State<LoginScreen> {
           if (mounted) {
             Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(builder: (context) => TableSelectionScreen()),
-              (Route<dynamic> route) => false,
+                  (Route<dynamic> route) => false,
             );
           }
         });
@@ -55,23 +56,26 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Giriş Yap")),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              TextFormField(
-                controller: _pinController,
-                decoration: const InputDecoration(labelText: "PIN Kodu"),
-                validator: (value) => (value == null || value.isEmpty) ? "PIN kodu gereklidir" : null,
-                keyboardType: TextInputType.number,
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(onPressed: _handleLogin, child: const Text("Giriş Yap")),
-            ],
+    return AnimatedGradientBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent, // Gradient görünecek
+        appBar: AppBar(title: const Text("Giriş Yap")),
+        body: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                TextFormField(
+                  controller: _pinController,
+                  decoration: const InputDecoration(labelText: "PIN Kodu"),
+                  validator: (value) => (value == null || value.isEmpty) ? "PIN kodu gereklidir" : null,
+                  keyboardType: TextInputType.number,
+                ),
+                const SizedBox(height: 20),
+                ElevatedButton(onPressed: _handleLogin, child: const Text("Giriş Yap")),
+              ],
+            ),
           ),
         ),
       ),

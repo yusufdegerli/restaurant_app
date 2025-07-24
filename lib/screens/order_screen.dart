@@ -11,6 +11,7 @@ import 'package:sambapos_app_restorant/widgets/order_category_tabbar.dart';
 import 'package:sambapos_app_restorant/widgets/order_menu_grid.dart';
 import 'package:sambapos_app_restorant/widgets/order_list_view.dart';
 import 'package:sambapos_app_restorant/utils/order_screen_helpers.dart';
+import 'package:sambapos_app_restorant/widgets/animate_gradient_background.dart';
 
 class OrderScreen extends StatefulWidget {
   final String tableName;
@@ -288,6 +289,7 @@ class OrderScreenState extends State<OrderScreen> with SingleTickerProviderState
       // Animasyon bitince pop yapılacak, burada false dönüyoruz
       return false;
     } else {
+      print('Ters animasyon için  gerekli argümanlar eksik!');
       // Pozisyon bilgisi yoksa normal pop
       return true;
     }
@@ -297,7 +299,7 @@ class OrderScreenState extends State<OrderScreen> with SingleTickerProviderState
   Widget build(BuildContext context) {
     try {
       return PopScope(
-        canPop: true,
+        canPop: false, //_onWillPop'a girecek
         onPopInvokedWithResult: (didPop, result) async {
           if (!didPop) {
             await _onWillPop();

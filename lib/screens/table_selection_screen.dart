@@ -19,8 +19,123 @@ import 'package:sambapos_app_restorant/widgets/animated_sheet_content.dart';
 import 'package:sambapos_app_restorant/widgets/table_category_section.dart';
 import 'package:sambapos_app_restorant/widgets/table_selection_appbar.dart';
 import 'package:sambapos_app_restorant/utils/table_selection_helpers.dart';
-import 'package:flutter/services.dart';
+import 'dart:math';
+import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
+import 'package:sambapos_app_restorant/widgets/animate_gradient_background.dart';
 
+class Particle {
+  Offset position;
+  double speed;
+  double radius;
+
+  Particle({
+    required this.position,
+    required this.speed,
+    required this.radius,
+  });
+}
+
+class ParticlePainter extends CustomPainter {
+  final List<Particle> particles;
+  final bool isDarkMode;
+
+  ParticlePainter(this.particles, this.isDarkMode);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = isDarkMode
+          ? Colors.white.withOpacity(0.9)
+          : Colors.black.withOpacity(0.7);
+    canvas.drawCircle(Offset(100, 100), 10, paint); // Sabit test partikülü
+    for (var p in particles) {
+      canvas.drawCircle(p.position, p.radius, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant ParticlePainter oldDelegate) {
+    return particles != oldDelegate.particles;
+  }
+}
+
+class AnimatedParticles extends StatefulWidget {
+  final bool isDarkMode;
+  const AnimatedParticles({super.key, required this.isDarkMode});
+
+  @override
+  State<AnimatedParticles> createState() => _AnimatedParticlesState();
+}
+
+class _AnimatedParticlesState extends State<AnimatedParticles> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  final List<Particle> _particles = [];
+  final int count = 150;
+  final Random random = Random();
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(days: 1),
+    )..addListener(_updateParticles);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initParticles(MediaQuery.of(context).size);
+    });
+
+    _controller.repeat();
+  }
+
+  void _initParticles(Size size) {
+    _particles.clear();
+    for (int i = 0; i < count; i++) {
+      _particles.add(
+        Particle(
+          position: Offset(random.nextDouble() * size.width, random.nextDouble() * size.height),
+          speed: random.nextDouble() * 0.7 + 0.3,
+          radius: random.nextDouble() * 3 + 1.0,
+        ),
+      );
+    }
+  }
+
+  void _updateParticles() {
+    final size = MediaQuery.of(context).size;
+    for (var p in _particles) {
+      var y = p.position.dy + p.speed;
+      if (y > size.height) y = 0;
+      p.position = Offset(p.position.dx, y);
+      if (_particles.indexOf(p) < 5) {
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        return IgnorePointer(
+          child: SizedBox.expand(
+            child: CustomPaint(
+              painter: ParticlePainter(_particles, widget.isDarkMode),
+              child: Container(),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+}
 
 class TableSelectionScreen extends StatefulWidget {
   @override
@@ -28,7 +143,7 @@ class TableSelectionScreen extends StatefulWidget {
 }
 
 class _TableSelectionScreenState extends State<TableSelectionScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   Timer? _pollingTimer;
   List<RestaurantTable> _tables = [];
   Map<String, List<RestaurantTable>> _groupedTables = {};
@@ -535,7 +650,17 @@ class _TableSelectionScreenState extends State<TableSelectionScreen>
                               ElevatedButton(
                                 onPressed: () {
                                   Navigator.pop(context);
-                                  _navigateToOrderScreen(context, tableName);
+                                  final tableKey = _tableKeys[tableName];
+                                  Offset? initialPosition;
+                                  Size? initialSize;
+                                  Color? buttonColor = Theme.of(context).colorScheme.primary;
+                                  if (tableKey  != null && tableKey.currentContext != null){
+                                    final RenderBox renderBox = tableKey.currentContext!.findRenderObject() as RenderBox;
+                                    initialSize = renderBox.size;
+                                    initialPosition = renderBox.localToGlobal(Offset.zero);
+                                  }
+                                  _startAnimationAndNavigate(context, tableName, buttonColor ?? Theme.of(context).colorScheme.primary);
+                                  //_navigateToOrderScreen(context, tableName);
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: _isEditing ? Colors.black : Colors.orange,
@@ -570,7 +695,16 @@ class _TableSelectionScreenState extends State<TableSelectionScreen>
                             child: ElevatedButton(
                               onPressed: () {
                                 Navigator.pop(context);
-                                _navigateToOrderScreen(context, tableName);
+                                final tableKey = _tableKeys[tableName];
+                                Offset? initialPosition;
+                                Size? initialSize;
+                                Color? buttonColor = Theme.of(context).colorScheme.primary;
+                                if (tableKey != null && tableKey.currentContext != null) {
+                                  final RenderBox renderBox = tableKey.currentContext!.findRenderObject() as RenderBox;
+                                  initialSize = renderBox.size;
+                                  initialPosition = renderBox.localToGlobal(Offset.zero);
+                                }
+                                _startAnimationAndNavigate(context, tableName, buttonColor ?? Theme.of(context).colorScheme.primary);
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.green,
@@ -737,7 +871,16 @@ class _TableSelectionScreenState extends State<TableSelectionScreen>
                             onPressed: () {
                               Navigator.pop(context);
                               Future.delayed(Duration(milliseconds: 100), () {
-                                _showOrderDetails(table.name);
+                                final tableKey = _tableKeys[table.name];
+                                Offset? initialPosition;
+                                Size? initialSize;
+                                Color? buttonColor = Theme.of(context).colorScheme.primary;
+                                if (tableKey != null && tableKey.currentContext != null) {
+                                  final RenderBox renderBox = tableKey.currentContext!.findRenderObject() as RenderBox;
+                                  initialSize = renderBox.size;
+                                  initialPosition = renderBox.localToGlobal(Offset.zero);
+                                }
+                                _startAnimationAndNavigate(context, table.name, buttonColor ?? Theme.of(context).colorScheme.primary);
                               });
                             },
                             style: ElevatedButton.styleFrom(
@@ -895,133 +1038,95 @@ class _TableSelectionScreenState extends State<TableSelectionScreen>
     final isAuthorized = authProvider.userRoleId == 1 || authProvider.userRoleId == 2;
     print("isAuthorized: $isAuthorized");
 
-    // Gradient renkleri tema moduna göre
-    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
-    final gradientColors = isDarkMode
-        ? [Color(0xFF000000), Color(0xFF000B58)]
-        : [Color(0xFFFEFFC4), Color(0xFFF5D667)];
-
     if (_isLoading) {
-      return Scaffold(
-        body: AnimatedBuilder(
-          animation: _gradientController,
-          builder: (context, _) {
-            return DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: gradientColors,
-                  begin: _beginAnimation.value,
-                  end: _endAnimation.value,
+      return AnimatedGradientBackground(
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          body: CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                pinned: true,
+                floating: false,
+                snap: false,
+                backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+                elevation: 0,
+                title: Text(
+                  "Masa Seçimi",
+                  style: TextStyle(color: Theme.of(context).appBarTheme.foregroundColor),
                 ),
               ),
-              child: CustomScrollView(
-                slivers: [
-                  SliverAppBar(
-                    pinned: true,
-                    floating: false,
-                    snap: false,
-                    backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
-                    elevation: 0,
-                    title: Text(
-                      "Masa Seçimi",
-                      style: TextStyle(color: Theme.of(context).appBarTheme.foregroundColor),
-                    ),
-                  ),
-                  const SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: Center(child: CircularProgressIndicator()),
-                  ),
-                ],
+              const SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(child: CircularProgressIndicator()),
               ),
-            );
-          },
+            ],
+          ),
         ),
       );
     }
     if (_error.isNotEmpty) {
-      return Scaffold(
-        body: AnimatedBuilder(
-          animation: _gradientController,
-          builder: (context, _) {
-            return DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: gradientColors,
-                  begin: _beginAnimation.value,
-                  end: _endAnimation.value,
+      return AnimatedGradientBackground(
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          body: CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                pinned: true,
+                floating: false,
+                snap: false,
+                backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
+                elevation: 0,
+                title: Text(
+                  "Masa Seçimi",
+                  style: TextStyle(color: Theme.of(context).appBarTheme.foregroundColor),
                 ),
               ),
-              child: CustomScrollView(
-                slivers: [
-                  SliverAppBar(
-                    pinned: true,
-                    floating: false,
-                    snap: false,
-                    backgroundColor: Theme.of(context).appBarTheme.backgroundColor,
-                    elevation: 0,
-                    title: Text(
-                      "Masa Seçimi",
-                      style: TextStyle(color: Theme.of(context).appBarTheme.foregroundColor),
-                    ),
+              SliverFillRemaining(
+                hasScrollBody: false,
+                child: Center(
+                  child: Text(
+                    _error,
+                    style: TextStyle(fontSize: 18, color: Colors.red),
                   ),
-                  SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: Center(
-                      child: Text(
-                        _error,
-                        style: TextStyle(fontSize: 18, color: Colors.red),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
-            );
-          },
+            ],
+          ),
         ),
       );
     }
-    return Scaffold(
-      body: AnimatedBuilder(
-        animation: _gradientController,
-        builder: (context, _) {
-          return DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: gradientColors,
-                begin: _beginAnimation.value,
-                end: _endAnimation.value,
+    return AnimatedGradientBackground(
+      includeParticles: true, // Partikül animasyonunu sadece burada kullanıyoruz
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: CustomScrollView(
+          slivers: [
+            Consumer<ThemeProvider>(
+              builder: (context, themeProvider, _) {
+                return TableSelectionAppBar(
+                  userName: _userName,
+                  userRoleId: authProvider.userRoleId,
+                  lottieController: _lottieController,
+                  onLogout: _handleLogout,
+                  onCloseTable: _handleCloseTable,
+                  isAuthorized: isAuthorized,
+                  themeMode: themeProvider.themeMode,
+                  onToggleTheme: themeProvider.toggleTheme,
+                );
+              },
+            ),
+            SliverToBoxAdapter(
+              child: GestureDetector(
+                onTap: _closeActionMenu,
+                behavior: HitTestBehavior.opaque,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: _buildCategorySections(),
+                ),
               ),
             ),
-            child: CustomScrollView(
-              slivers: [
-                Consumer<ThemeProvider>(
-                  builder: (context, themeProvider, _) {
-                    return TableSelectionAppBar(
-                      userName: _userName,
-                      userRoleId: authProvider.userRoleId,
-                      lottieController: _lottieController,
-                      onLogout: _handleLogout,
-                      onCloseTable: _handleCloseTable,
-                      isAuthorized: isAuthorized,
-                      themeMode: themeProvider.themeMode,
-                      onToggleTheme: themeProvider.toggleTheme,
-                    );
-                  },
-                ),
-                SliverToBoxAdapter(
-                  child: GestureDetector(
-                    onTap: _closeActionMenu,
-                    behavior: HitTestBehavior.opaque,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: _buildCategorySections(),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
+          ],
+        ),
       ),
     );
   }
