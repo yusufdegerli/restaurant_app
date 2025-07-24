@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sambapos_app_restorant/models/table.dart';
 import 'package:sambapos_app_restorant/screens/calculating_table_screen.dart';
-import 'package:sambapos_app_restorant/widgets/animate_gradient_background.dart'; // Yeni widget'ı ekle
+import 'package:sambapos_app_restorant/widgets/animate_gradient_background.dart';
 
 class CloseTableScreen extends StatelessWidget {
   final List<RestaurantTable> tables;
@@ -20,10 +20,15 @@ class CloseTableScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return AnimatedGradientBackground(
       child: Scaffold(
-        backgroundColor: Colors.transparent, // Gradient görünecek
+        backgroundColor: Colors.transparent,
         appBar: AppBar(title: const Text("Masayı Kapat")),
         body: tables.isEmpty
-            ? const Center(child: Text("Kapatılacak masa bulunmamaktadır.", style: TextStyle(fontSize: 18)))
+            ? const Center(
+          child: Text(
+            "Kapatılacak masa bulunmamaktadır.",
+            style: TextStyle(fontSize: 18, color: Colors.grey),
+          ),
+        )
             : GridView.builder(
           padding: const EdgeInsets.all(16),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -39,7 +44,9 @@ class CloseTableScreen extends StatelessWidget {
               onTap: () => _navigateToCalculatingScreen(context, table.name, table.ticketId),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.orange,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Color(0xFF799EFF)
+                      : Theme.of(context).colorScheme.primary,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Center(
